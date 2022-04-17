@@ -47,7 +47,6 @@ bool Connection::send(const Message &msg)
   // TODO: send a message
   // return true if successful, false if not
   // make sure that m_last_result is set appropriately
-
   m_last_result = INVALID_MSG;
   if (msg.tag.length() + msg.data.length() + 2 > msg.MAX_LEN)
   {
