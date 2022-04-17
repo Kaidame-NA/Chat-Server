@@ -34,6 +34,7 @@ Connection::~Connection()
 bool Connection::is_open() const
 {
   // TODO
+  return true;
 }
 
 void Connection::close()
