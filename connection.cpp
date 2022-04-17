@@ -46,9 +46,20 @@ bool Connection::send(const Message &msg)
   // TODO: send a message
   // return true if successful, false if not
   // make sure that m_last_result is set appropriately
+
+  m_last_result = INVALID_MSG;
   if (msg.tag.length() + msg.data.length() + 2 > msg.MAX_LEN)
   {
-    m_last_result = INVALID_MSG;
+    return false;
+  }
+  if(!is_valid_tag(msg.tag)) {
+    return false;
+  }
+  if(msg.tag == TAG_DELIVERY && !is_valid_delivery(msg)) {
+    return false;
+  }
+  if((msg.tag == TAG_ERR || msg.tag == TAG_OK || msg.tag == TAG_SLOGIN || msg.tag == TAG_RLOGIN || msg.tag == TAG_JOIN || msg.tag == TAG_SENDALL) &&
+     (msg.data == "")) {
     return false;
   }
   if (rio_writen(m_fd, msg.tag.c_str(), msg.tag.length()) == -1 || rio_writen(m_fd, ":", 1) == -1 
@@ -73,5 +84,30 @@ bool Connection::receive(Message &msg)
     return false;
   }
 
+  m_last_result = INVALID_MSG;
+  std::string message = std::string(buf);
+  std::string tag = message.substr(0, message.find(":"));
+  if(!is_valid_tag(tag)) {
+    return false;
+  } 
+  std::string data = message.substr(message.find(":")+1);
+  msg.tag = tag;
+  msg.data = data;
+  if(tag == TAG_DELIVERY && !is_valid_delivery(msg)) {
+    return false;
+  }
+  if((tag == TAG_ERR || tag == TAG_OK || tag == TAG_SLOGIN || tag == TAG_RLOGIN || tag == TAG_JOIN || tag == TAG_SENDALL) &&
+     (data == "")) {
+    return false;
+  }
   m_last_result = SUCCESS;
+}
+
+bool Connection::is_valid_tag(std::string tag) {
+  return (tag == TAG_ERR || tag == TAG_OK || tag == TAG_SLOGIN || tag == TAG_RLOGIN || tag == TAG_JOIN || tag == TAG_LEAVE ||
+      tag == TAG_SENDALL || tag == TAG_SENDUSER || tag == TAG_QUIT || tag == TAG_DELIVERY || tag == TAG_EMPTY);
+}
+
+bool Connection::is_valid_delivery(Message msg) {
+  return msg.split_payload().size() != 3;
 }

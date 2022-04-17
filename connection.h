@@ -47,6 +47,8 @@ private:
   // prohibit value semantics
   Connection(const Connection &);
   Connection &operator=(const Connection &);
+  bool is_valid_tag(std::string tag);
+  bool is_valid_delivery(Message msg);
 
   // these are the recommended member variables for the
   // Connection class
