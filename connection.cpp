@@ -34,7 +34,7 @@ Connection::~Connection()
 bool Connection::is_open() const
 {
   // TODO
-  return true;
+  return m_fd >= 0;
 }
 
 void Connection::close()
@@ -79,7 +79,7 @@ bool Connection::receive(Message &msg)
   // make sure that m_last_result is set appropriately
   char buf[255];
   ssize_t result = rio_readlineb(&m_fdbuf, buf, sizeof(buf));
-  if(result == 0 || -1) {
+  if(result == 0 || result == -1) {
     m_last_result = EOF_OR_ERROR;
     return false;
   }
@@ -101,6 +101,7 @@ bool Connection::receive(Message &msg)
     return false;
   }
   m_last_result = SUCCESS;
+  return true;
 }
 
 bool Connection::is_valid_tag(std::string tag) {
