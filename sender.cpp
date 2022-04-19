@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
   bool quit = false;
   bool in_room = false;
   while(!quit) {
+    std::cout << "> ";
     std::getline(std::cin, user_input);
     if(user_input.substr(0,6) == "/join " || user_input == "/join") {
       if(user_input == "/join") {
@@ -62,7 +63,6 @@ int main(int argc, char **argv) {
         }
         if(server_response.tag == TAG_ERR) {
           std::cerr << server_response.data << "\n";
-          continue;
         }
         in_room = true;
       } 
@@ -78,7 +78,6 @@ int main(int argc, char **argv) {
       }
       if(server_response.tag == TAG_ERR) {
         std::cerr << server_response.data << "\n";
-        continue;
       }
       in_room = false;
     } else if(user_input == "/quit") {

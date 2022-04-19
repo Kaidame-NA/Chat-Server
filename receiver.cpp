@@ -38,13 +38,13 @@ int main(int argc, char **argv) {
   if(!send_and_respond(connection, client_message_rlogin, server_response_rlogin)) {
     return 3;
   }
-  if(!send_and_respond(connection, client_message_join, server_response_join)) {
-    return 3;
-  }
   if(server_response_rlogin.tag == TAG_ERR) {
     std::cerr << server_response_rlogin.data << "\n";
     return 4;
   } 
+  if(!send_and_respond(connection, client_message_join, server_response_join)) {
+    return 3;
+  }
   if(server_response_join.tag == TAG_ERR) {
     std::cerr << server_response_join.data << "\n";
     return 4;
@@ -54,7 +54,6 @@ int main(int argc, char **argv) {
   std::string server_data;
   bool quit = false;
   bool message_received;
-  bool in_room = false;
   while (!quit) {
     Message server_response;
     message_received = connection.receive(server_response);
@@ -66,15 +65,13 @@ int main(int argc, char **argv) {
       quit = true;
       continue;
     }
-    server_data = server_response.data;
-    std::string delim = ":";
-    std::string room_name = server_data.substr(0, server_data.find(delim));
-    server_data.erase(0,server_data.find(delim) + 1);
-    std::string name = server_data.substr(0,server_data.find(delim));
-    server_data.erase(0,server_data.find(delim) + 1);
-    std::string message = server_data;
-    server_response.tag = TAG_DELIVERY;
-    std::cout << name << ": " << message ;
+    std::vector<std::string> payload_split = server_response.split_payload();
+    std::string server_room_name = payload_split.at(0);
+    std::string name = payload_split.at(1);
+    std::string message = payload_split.at(2);
+    if(room_name == server_room_name) {
+      std::cout << name << ": " << message ;
+    }
   }
 
   return 0;
