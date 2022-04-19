@@ -57,6 +57,13 @@ int main(int argc, char **argv) {
         std::cerr << "/join command needs room name\n";
         continue;
       } else {
+        if(!send_and_respond(connection, client_message, server_response)) {
+          return 3;
+        }
+        if(server_response.tag == TAG_ERR) {
+          std::cerr << server_response.data << "\n";
+          continue;
+        }
         in_room = true;
       } 
     } else if(user_input == "/leave") {
@@ -66,11 +73,24 @@ int main(int argc, char **argv) {
         std::cerr << "not in a room\n";
         continue;
       }
+      if(!send_and_respond(connection, client_message, server_response)) {
+        return 3;
+      }
+      if(server_response.tag == TAG_ERR) {
+        std::cerr << server_response.data << "\n";
+        continue;
+      }
       in_room = false;
     } else if(user_input == "/quit") {
       client_message.tag = TAG_QUIT;
       client_message.data = "";
       quit = true;
+      if(!send_and_respond(connection, client_message, server_response)) {
+        return 3;
+      }
+      if(server_response.tag == TAG_ERR) {
+        std::cerr << server_response.data << "\n";
+      }
     } else if(user_input.at(0) == '/') {
       std::cerr << "Unknown command " << user_input << "\n";
       continue;
@@ -81,13 +101,14 @@ int main(int argc, char **argv) {
         std::cerr << "not in a room\n";
         continue;
       }
-    }
-
-    if(!send_and_respond(connection, client_message, server_response)) {
-      return 3;
-    }
-    if(server_response.tag == TAG_ERR) {
+      if(!send_and_respond(connection, client_message, server_response)) {
+        if(connection.get_last_result() != Connection::INVALID_MSG) {
+          return 3;
+        }
+      }
+      if(server_response.tag == TAG_ERR) {
         std::cerr << server_response.data << "\n";
+      }
     }
   }
 
