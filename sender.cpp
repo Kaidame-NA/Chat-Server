@@ -63,6 +63,7 @@ int main(int argc, char **argv) {
         }
         if(server_response.tag == TAG_ERR) {
           std::cerr << server_response.data << "\n";
+          continue;
         }
         in_room = true;
       } 
@@ -78,6 +79,7 @@ int main(int argc, char **argv) {
       }
       if(server_response.tag == TAG_ERR) {
         std::cerr << server_response.data << "\n";
+        continue;
       }
       in_room = false;
     } else if(user_input == "/quit") {
@@ -89,6 +91,7 @@ int main(int argc, char **argv) {
       }
       if(server_response.tag == TAG_ERR) {
         std::cerr << server_response.data << "\n";
+        continue;
       }
     } else if(user_input.at(0) == '/') {
       std::cerr << "Unknown command " << user_input << "\n";
@@ -107,6 +110,7 @@ int main(int argc, char **argv) {
       }
       if(server_response.tag == TAG_ERR) {
         std::cerr << server_response.data << "\n";
+        continue;
       }
     }
   }
@@ -120,7 +124,7 @@ bool send_and_respond(Connection &connection, Message &client_message, Message &
     return false;
   }
   if(!connection.receive(server_response)) {
-    std::cerr << "Server Transmission Error\n";
+    std::cerr << server_response.data <<"\n";
     return false;
   }
   return true;

@@ -83,7 +83,7 @@ bool send_and_respond(Connection &connection, Message &client_message, Message &
     return false;
   }
   if(!connection.receive(server_response)) {
-    std::cerr << "Server Transmission Error\n";
+    std::cerr << server_response.data << "\n";
     return false;
   }
   return true;
