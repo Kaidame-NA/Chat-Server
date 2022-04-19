@@ -103,6 +103,12 @@ bool Connection::receive(Message &msg)
      (data == "")) {
     return false;
   }
+  if(data.back() == '\n') {
+    msg.data.pop_back();
+  }
+  if(data.back() == '\r') {
+    msg.data.pop_back();
+  }
   m_last_result = SUCCESS;
   return true;
 }
