@@ -31,12 +31,42 @@ int main(int argc, char **argv) {
   }
   // TODO: send rlogin and join messages (expect a response from
   //       the server for each one)
+  Message server_response_rlogin;
+  Message server_response_join;
   Message server_response;
-  Message client_message(TAG_SLOGIN, username);
-
+  Message client_message_rlogin(TAG_RLOGIN, username);
+  Message client_message_join(TAG_JOIN, room_name);
+  if(!send_and_respond(connection, client_message_rlogin, server_response_rlogin)) {
+    return 3;
+  }
+  if(!send_and_respond(connection, client_message_join, server_response_join)) {
+    return 3;
+  }
+  if(server_response_rlogin.tag == TAG_ERR) {
+    std::cerr << server_response.data << "\n";
+    return 4;
+  } 
+  if(server_response_join.tag == TAG_ERR) {
+    std::cerr << server_response.data << "\n";
+    return 4;
+  } 
   // TODO: loop waiting for messages from server
   //       (which should be tagged with TAG_DELIVERY)
-
+  std::string user_input;
+  bool quit = false;
+  bool in_room = false;
+  while (!quit) {
+    std::getline(std::cin,user_input);
+    if (user_input == "\000") {
+      continue;
+    }
+    if(!connection.receive(server_response)) {
+      std::cerr << "Server Transmission Error\n";
+      return 3;
+    }
+    server_response.tag = TAG_DELIVERY;
+    std::cout << server_response.data << "\n";
+  }
 
   return 0;
 }
