@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
   } 
   // TODO: loop waiting for messages from server
   //       (which should be tagged with TAG_DELIVERY)
-  std::string user_input;
+  std::string server_data;
   bool quit = false;
   bool message_received;
   bool in_room = false;
@@ -62,8 +62,19 @@ int main(int argc, char **argv) {
       std::cerr << "Server Transmission Error\n";
       return 3;
     }
+    if (server_response.data.length() == 0) {
+      quit = true;
+      continue;
+    }
+    server_data = server_response.data;
+    std::string delim = ":";
+    std::string room_name = server_data.substr(0, server_data.find(delim));
+    server_data.erase(0,server_data.find(delim) + 1);
+    std::string name = server_data.substr(0,server_data.find(delim));
+    server_data.erase(0,server_data.find(delim) + 1);
+    std::string message = server_data;
     server_response.tag = TAG_DELIVERY;
-    std::cout << server_response.data;
+    std::cout << name << ": " << message ;
   }
 
   return 0;
