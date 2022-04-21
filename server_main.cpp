@@ -6,8 +6,10 @@
 // TODO comments, you should not need to make any changes
 // to this main function.
 
-int main(int argc, char **argv) {
-  if (argc != 2) {
+int main(int argc, char **argv)
+{
+  if (argc != 2)
+  {
     std::cerr << "Usage: server_main <port>\n";
     return 1;
   }
@@ -20,7 +22,8 @@ int main(int argc, char **argv) {
   signal(SIGPIPE, SIG_IGN);
 
   Server server(port);
-  if (!server.listen()) {
+  if (!server.listen())
+  {
     std::cerr << "Could not listen on port " << port << "\n";
     return 1;
   }

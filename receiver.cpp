@@ -9,8 +9,10 @@
 
 bool send_and_respond(Connection &connection, Message &client_message, Message &server_response);
 
-int main(int argc, char **argv) {
-  if (argc != 5) {
+int main(int argc, char **argv)
+{
+  if (argc != 5)
+  {
     std::cerr << "Usage: ./receiver [server_address] [port] [username] [room]\n";
     return 1;
   }
@@ -25,43 +27,52 @@ int main(int argc, char **argv) {
   // TODO: connect to server
   Connection connection;
   connection.connect(server_hostname, server_port);
-  if(!connection.is_open()) {
-    std::cerr << "Failed to open connection" << "\n";
+  if (!connection.is_open())
+  {
+    std::cerr << "Failed to open connection"
+              << "\n";
     return 2;
   }
   // TODO: send rlogin and join messages (expect a response from
   //       the server for each one)
-  Message server_response_rlogin;
-  Message server_response_join;
-  Message client_message_rlogin(TAG_RLOGIN, username);
-  Message client_message_join(TAG_JOIN, room_name);
-  if(!send_and_respond(connection, client_message_rlogin, server_response_rlogin)) {
+  Message server_response;
+  Message client_message(TAG_RLOGIN, username);
+  if (!send_and_respond(connection, client_message, server_response))
+  {
     return 3;
   }
-  if(server_response_rlogin.tag == TAG_ERR) {
-    std::cerr << server_response_rlogin.data << "\n";
+  if (server_response.tag == TAG_ERR)
+  {
+    std::cerr << server_response.data << "\n";
     return 4;
-  } 
-  if(!send_and_respond(connection, client_message_join, server_response_join)) {
+  }
+  client_message.tag = TAG_JOIN;
+  client_message.data = room_name;
+  if (!send_and_respond(connection, client_message, server_response))
+  {
     return 3;
   }
-  if(server_response_join.tag == TAG_ERR) {
-    std::cerr << server_response_join.data << "\n";
+  if (server_response.tag == TAG_ERR)
+  {
+    std::cerr << server_response.data << "\n";
     return 4;
-  } 
+  }
   // TODO: loop waiting for messages from server
   //       (which should be tagged with TAG_DELIVERY)
   std::string server_data;
   bool quit = false;
   bool message_received;
-  while (!quit) {
+  while (!quit)
+  {
     Message server_response;
     message_received = connection.receive(server_response);
-    if(message_received != 0) {
+    if (message_received != 0)
+    {
       std::cerr << "Server Transmission Error\n";
       return 3;
     }
-    if (server_response.data.length() == 0) {
+    if (server_response.data.length() == 0)
+    {
       quit = true;
       continue;
     }
@@ -69,20 +80,24 @@ int main(int argc, char **argv) {
     std::string server_room_name = payload_split.at(0);
     std::string name = payload_split.at(1);
     std::string message = payload_split.at(2);
-    if(room_name == server_room_name) {
-      std::cout << name << ": " << message ;
+    if (room_name == server_room_name)
+    {
+      std::cout << name << ": " << message;
     }
   }
 
   return 0;
 }
 
-bool send_and_respond(Connection &connection, Message &client_message, Message &server_response) {
-  if(!connection.send(client_message)) {
+bool send_and_respond(Connection &connection, Message &client_message, Message &server_response)
+{
+  if (!connection.send(client_message))
+  {
     std::cerr << "Client Transmission Error\n";
     return false;
   }
-  if(!connection.receive(server_response)) {
+  if (!connection.receive(server_response))
+  {
     std::cerr << server_response.data << "\n";
     return false;
   }

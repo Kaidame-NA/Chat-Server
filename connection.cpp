@@ -28,7 +28,8 @@ void Connection::connect(const std::string &hostname, int port)
 Connection::~Connection()
 {
   // TODO: close the socket if it is open
-  if(is_open()) {
+  if (is_open())
+  {
     close();
   }
   m_fd = -1;
@@ -55,18 +56,20 @@ bool Connection::send(const Message &msg)
   {
     return false;
   }
-  if(!is_valid_tag(msg.tag)) {
+  if (!is_valid_tag(msg.tag))
+  {
     return false;
   }
-  if(msg.tag == TAG_DELIVERY && !is_valid_delivery(msg)) {
+  if (msg.tag == TAG_DELIVERY && !is_valid_delivery(msg))
+  {
     return false;
   }
-  if((msg.tag == TAG_ERR || msg.tag == TAG_OK || msg.tag == TAG_SLOGIN || msg.tag == TAG_RLOGIN || msg.tag == TAG_JOIN || msg.tag == TAG_SENDALL) &&
-     (msg.data == "")) {
+  if ((msg.tag == TAG_ERR || msg.tag == TAG_OK || msg.tag == TAG_SLOGIN || msg.tag == TAG_RLOGIN || msg.tag == TAG_JOIN || msg.tag == TAG_SENDALL) &&
+      (msg.data == ""))
+  {
     return false;
   }
-  if (rio_writen(m_fd, msg.tag.c_str(), msg.tag.length()) == -1 || rio_writen(m_fd, ":", 1) == -1 
-  || rio_writen(m_fd, msg.data.c_str(), msg.data.length()) == -1 || rio_writen(m_fd, "\n", 1) == -1)
+  if (rio_writen(m_fd, msg.tag.c_str(), msg.tag.length()) == -1 || rio_writen(m_fd, ":", 1) == -1 || rio_writen(m_fd, msg.data.c_str(), msg.data.length()) == -1 || rio_writen(m_fd, "\n", 1) == -1)
   {
     m_last_result = EOF_OR_ERROR;
     return false;
@@ -82,7 +85,8 @@ bool Connection::receive(Message &msg)
   // make sure that m_last_result is set appropriately
   char buf[255];
   ssize_t result = rio_readlineb(&m_fdbuf, buf, sizeof(buf));
-  if(result == 0 || result == -1) {
+  if (result == 0 || result == -1)
+  {
     m_last_result = EOF_OR_ERROR;
     return false;
   }
@@ -90,34 +94,41 @@ bool Connection::receive(Message &msg)
   m_last_result = INVALID_MSG;
   std::string message = std::string(buf);
   std::string tag = message.substr(0, message.find(":"));
-  if(!is_valid_tag(tag)) {
+  if (!is_valid_tag(tag))
+  {
     return false;
-  } 
-  std::string data = message.substr(message.find(":")+1);
+  }
+  std::string data = message.substr(message.find(":") + 1);
   msg.tag = tag;
   msg.data = data;
-  if(tag == TAG_DELIVERY && !is_valid_delivery(msg)) {
+  if (tag == TAG_DELIVERY && !is_valid_delivery(msg))
+  {
     return false;
   }
-  if((tag == TAG_ERR || tag == TAG_OK || tag == TAG_SLOGIN || tag == TAG_RLOGIN || tag == TAG_JOIN || tag == TAG_SENDALL) &&
-     (data == "")) {
+  if ((tag == TAG_ERR || tag == TAG_OK || tag == TAG_SLOGIN || tag == TAG_RLOGIN || tag == TAG_JOIN || tag == TAG_SENDALL) &&
+      (data == ""))
+  {
     return false;
   }
-  if(data.back() == '\n') {
+  if (data.back() == '\n')
+  {
     msg.data.pop_back();
   }
-  if(data.back() == '\r') {
+  if (data.back() == '\r')
+  {
     msg.data.pop_back();
   }
   m_last_result = SUCCESS;
   return true;
 }
 
-bool Connection::is_valid_tag(std::string tag) {
+bool Connection::is_valid_tag(std::string tag)
+{
   return (tag == TAG_ERR || tag == TAG_OK || tag == TAG_SLOGIN || tag == TAG_RLOGIN || tag == TAG_JOIN || tag == TAG_LEAVE ||
-      tag == TAG_SENDALL || tag == TAG_SENDUSER || tag == TAG_QUIT || tag == TAG_DELIVERY || tag == TAG_EMPTY);
+          tag == TAG_SENDALL || tag == TAG_SENDUSER || tag == TAG_QUIT || tag == TAG_DELIVERY || tag == TAG_EMPTY);
 }
 
-bool Connection::is_valid_delivery(Message msg) {
+bool Connection::is_valid_delivery(Message msg)
+{
   return msg.split_payload().size() != 3;
 }
