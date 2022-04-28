@@ -98,7 +98,8 @@ namespace
       }
       if(client == "reciever")
       {
-        chat_with_reciever(msg);
+        MessageQueue msgQueue;
+        chat_with_reciever(msg, msgQueue);
       } 
       else 
       {
