@@ -36,7 +36,8 @@ struct ConnInfo
 
 namespace
 {
-
+  int chat_with_reciever(User *thisUser, Room **room, ConnInfo *info);
+  int chat_with_sender(User *thisUser, Room **room, ConnInfo *info);
   void *worker(void *arg)
   {
     pthread_detach(pthread_self());
@@ -67,11 +68,11 @@ namespace
     }
     if (msg.tag == TAG_SLOGIN)
     {
-      client = "slogin";
+      client = "sender";
     }
     else
     {
-      client = "rlogin";
+      client = "reciever";
     }
     std::string username = msg.data;
     if (username == "")
@@ -84,40 +85,141 @@ namespace
     {
       return nullptr;
     }
-
+    User *thisUser = new User(username);
+    Room *room = nullptr;
     // Just loop reading messages and sending an ok response for each one
     while (true)
+    {
+      if (client == "reciever")
+      {
+        if(chat_with_reciever(thisUser, &room, info_) != 0)
+        {
+          break;
+        }
+      }
+      else
+      {
+        if(chat_with_sender(thisUser, &room, info_) != 0)
+        {
+          break;
+        }
+      }
+    }
+    delete thisUser;
+    return nullptr;
+  }
+  int chat_with_reciever(User *thisUser, Room **room, ConnInfo *info)
+  {
+    Message msg;
+    if (*room == nullptr)
     {
       if (!info->conn->receive(msg))
       {
         if (info->conn->get_last_result() == Connection::INVALID_MSG)
         {
-          info->conn->send(Message(TAG_ERR, "invalid message"));
+          info->conn->send(Message(TAG_ERR, "invalid message format"));
+          return 1;
         }
-        break;
       }
-      if(client == "reciever")
+      if (msg.data.length() > msg.MAX_LEN)
       {
-        MessageQueue msgQueue;
-        chat_with_reciever(msg, msgQueue);
-      } 
-      else 
-      {
-        chat_with_sender(msg);
+        info->conn->send(Message(TAG_ERR, "invalid message format"));
+        return 1; // Invalid Message Format
       }
-      
-
-      // Need to implement message queue
-      // Below should go in chat_with_reciever and chat_with_sender
-      /*if (!info->conn->send(Message(TAG_OK, "this is just a dummy response")))
+      if (msg.tag != TAG_JOIN)
       {
-        break;
-      } */
+        info->conn->send(Message(TAG_ERR, "invalid message format"));
+        return 1; // Not in room
+      }
+      else
+      {
+        *room = info->server->find_or_create_room(msg.data);
+        (*room)->add_member(thisUser);
+        info->conn->send(Message(TAG_OK, "joined room " + msg.data));
+        if(info->conn->get_last_result() == Connection::EOF_OR_ERROR)
+        {
+          (*room)->remove_member(thisUser);
+          return 1;
+        }
+      }
     }
+    else
+    {
+      // Send message if there is a message to be broadcasted
+      Message *broadcastMsg = thisUser->mqueue.dequeue();
+      if(broadcastMsg != nullptr) {
+        std::vector<std::string> contents = broadcastMsg->split_payload();
+        if (contents.at(1) != thisUser->username && contents.at(0) == (*room)->get_room_name())
+        {
 
-    return nullptr;
+          info->conn->send(*broadcastMsg);
+        }
+        delete broadcastMsg;
+      }
+    }
+    return 0;
   }
 
+  // Returns 1 if terminates, 0 if doesn't need to terminate
+  int chat_with_sender(User *thisUser, Room **room, ConnInfo *info)
+  {
+    Message msg;
+    if (!info->conn->receive(msg))
+    {
+      if (info->conn->get_last_result() == Connection::INVALID_MSG)
+      {
+        info->conn->send(Message(TAG_ERR, "invalid message format"));
+      }
+    }
+    if (msg.data.length() > msg.MAX_LEN)
+    {
+      info->conn->send(Message(TAG_ERR, "invalid message format"));
+    }
+    if (*room == nullptr)
+    {
+      if(msg.tag == TAG_QUIT)
+      {
+        info->conn->send(Message(TAG_OK, "bye"));
+        return 1;
+      }
+      if (msg.tag != TAG_JOIN)
+      {
+        info->conn->send(Message(TAG_ERR, "not in a room"));
+      }
+      else
+      {
+        *room = info->server->find_or_create_room(msg.data);
+        (*room)->add_member(thisUser);
+        info->conn->send(Message(TAG_OK, "joined room " + msg.data));
+      }
+    }
+    else
+    {
+      if(msg.tag == TAG_LEAVE || msg.tag == TAG_JOIN || msg.tag == TAG_QUIT)
+      {
+        (*room)->remove_member(thisUser);
+        *room = nullptr;
+        info->conn->send(Message(TAG_OK, "left room"));
+      }
+      if(msg.tag == TAG_JOIN)
+      {
+        *room = info->server->find_or_create_room(msg.data);
+        (*room)->add_member(thisUser);
+        info->conn->send(Message(TAG_OK, "joined room " + msg.data));
+      }
+      if(msg.tag == TAG_QUIT)
+      {
+        info->conn->send(Message(TAG_OK, "bye"));
+        return 1;
+      }
+      if(msg.tag == TAG_SENDALL)
+      {
+        (*room)->broadcast_message(thisUser->username, msg.data);
+        info->conn->send(Message(TAG_OK, "message sent"));
+      }
+    }
+    return 0;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -186,6 +288,5 @@ Room *Server::find_or_create_room(const std::string &room_name)
   {
     room = i->second;
   }
-
   return room;
 }

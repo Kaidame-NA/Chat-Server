@@ -4,6 +4,7 @@
 #include "csapp.h"
 #include "message.h"
 #include "connection.h"
+#include <iostream>
 
 Connection::Connection()
     : m_fd(-1), m_last_result(SUCCESS)
@@ -130,5 +131,5 @@ bool Connection::is_valid_tag(std::string tag)
 
 bool Connection::is_valid_delivery(Message msg)
 {
-  return msg.split_payload().size() != 3;
+  return msg.split_payload().size() == 3;
 }

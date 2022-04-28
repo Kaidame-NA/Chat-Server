@@ -27,9 +27,9 @@ void Room::broadcast_message(const std::string &sender_username, const std::stri
   Guard guard(lock);
   std::stringstream ss;
   ss << room_name << ":" << sender_username << ":" << message_text;
-  Message *msg = new Message(TAG_DELIVERY, ss.str());
   for(UserSet::iterator itr = members.begin(); itr != members.end(); itr++) 
   {
+    Message *msg = new Message(TAG_DELIVERY, ss.str());
     (*itr) -> mqueue.enqueue(msg);
   }
 }
