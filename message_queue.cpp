@@ -22,7 +22,7 @@ void MessageQueue::enqueue(Message *msg)
   // be sure to notify any thread waiting for a message to be
   // available by calling sem_post
   {
-    Guard guard(&m_lock);
+    Guard guard(m_lock);
     m_messages.emplace_back(msg);
   }
   sem_post(&m_avail);
@@ -48,7 +48,7 @@ Message *MessageQueue::dequeue()
   Message *msg = nullptr;
   if (sem_timedwait(&m_avail, &ts) == 0)
   {
-    Guard guard(&m_lock);
+    Guard guard(m_lock);
     msg = m_messages.front();
     m_messages.pop_front();
   }
